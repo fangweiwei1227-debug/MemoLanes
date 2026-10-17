@@ -47,17 +47,29 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Enable Corepack & Yarn
         run: corepack enable
 
-      - name: Pre-build (Journey Kernel & Geo Rasterizer)
+      - name: Install Journey Kernel NPM Dependencies
+        working-directory: app/journey_kernel
+        run: yarn install --frozen-lockfile
+
+      - name: Geo Rasterize All Worldviews
+        working-directory: app
+        run: just rasterize-geo
+
+      - name: Build Journey Kernel (WASM & Webview)
         working-directory: app
         run: |
-          just rasterize-geo
           just journey-kernel-build
           just copy-webview-assets
+
+      - name: Flutter Dependencies & Codegen
+        working-directory: app
+        run: |
+          flutter pub get
           just frb-generate
 
       - name: Build Android Release APK
