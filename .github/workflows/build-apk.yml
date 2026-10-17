@@ -1,0 +1,72 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Just
+        uses: extractions/setup-just@v2
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: 3.47
+          cache: true
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@1.99.1
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Install Cargo Tools
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install Codegen & wasm-pack
+        run: |
+          cargo binstall -y --force --no-track cargo-expand
+          cargo binstall -y --force --no-track wasm-pack@0.15.0
+          cargo binstall -y --force --no-track "flutter_rust_bridge_codegen@$(awk '/flutter_rust_bridge:/ { print $2 }' app/pubspec.yaml)"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack & Yarn
+        run: corepack enable
+
+      - name: Pre-build (Journey Kernel & Geo Rasterizer)
+        working-directory: app
+        run: |
+          just rasterize-geo
+          just journey-kernel-build
+          just copy-webview-assets
+          just frb-generate
+
+      - name: Build Android Release APK
+        working-directory: app
+        run: |
+          flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MemoLanes-15u-Release-APK
+          path: app/build/app/outputs/flutter-apk/*.apk
