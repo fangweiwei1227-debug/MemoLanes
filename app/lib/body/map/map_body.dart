@@ -18,6 +18,7 @@ import 'package:memolanes/src/rust/journey_header.dart';
 import 'package:memolanes/utils/nav_helper.dart';
 import 'package:memolanes/src/rust/api/api.dart' as api;
 import 'package:provider/provider.dart';
+import 'package:memolanes/body/map/maple_gamification_overlay.dart';
 
 part 'map.g.dart';
 
@@ -311,7 +312,11 @@ class MapBodyState extends State<MapBody> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final mode = widget.mode;
 
-    final children = <Widget>[_buildMapLayer(), _buildOverlay(context, mode)];
+        final children = <Widget>[
+      _buildMapLayer(),
+      const MapleGamificationOverlay(),
+      _buildOverlay(context, mode),
+    ];
 
     return Stack(children: children);
   }
