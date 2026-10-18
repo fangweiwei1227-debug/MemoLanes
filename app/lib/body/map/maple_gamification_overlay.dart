@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:memolanes/common/gps_manager.dart';
@@ -8,19 +8,18 @@ class MapleGamificationOverlay extends StatefulWidget {
   const MapleGamificationOverlay({super.key});
 
   @override
-  State<MapleGamificationOverlay> createState() => _MapleGamificationOverlayState();
+  State<MapleGamificationOverlay> createState() =>
+      _MapleGamificationOverlayState();
 }
 
 class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
   int _mesos = 0;
   final List<_Mob> _mobs = [];
   final List<_Dmg> _dmgs = [];
-  double _lastCheckedDist = 0;
 
   @override
   void initState() {
     super.initState();
-    // 初始在角色周围刷一只绿水灵和一只花蘑菇
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _spawnMob('slime');
       _spawnMob('mushroom');
@@ -37,30 +36,37 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
     final y = (size.height / 2) + sin(angle) * dist - 25;
 
     setState(() {
-      _mobs.add(_Mob(id: DateTime.now().microsecondsSinceEpoch, type: type, pos: Offset(x, y)));
+      _mobs.add(_Mob(
+        id: DateTime.now().microsecondsSinceEpoch,
+        type: type,
+        pos: Offset(x, y),
+      ));
     });
   }
 
   void _hitMob(_Mob mob) {
-    HapticFeedback.heavyImpact(); // 15u 线性马达震动，打击感拉满
+    HapticFeedback.heavyImpact();
     final dmgVal = 77777 + Random().nextInt(22222);
 
     setState(() {
-      _dmgs.add(_Dmg(id: DateTime.now().microsecondsSinceEpoch, text: '$dmgVal', pos: Offset(mob.pos.dx, mob.pos.dy - 20)));
+      _dmgs.add(_Dmg(
+        id: DateTime.now().microsecondsSinceEpoch,
+        text: '$dmgVal',
+        pos: Offset(mob.pos.dx, mob.pos.dy - 20),
+      ));
       _mobs.remove(mob);
       _mesos += 100 + Random().nextInt(250);
     });
 
-    // 延时清除伤害数字
     Future.delayed(const Duration(milliseconds: 900), () {
       if (mounted) {
         setState(() {
-          _dmgs.removeWhere((d) => DateTime.now().microsecondsSinceEpoch - d.id > 800000);
+          _dmgs.removeWhere(
+              (d) => DateTime.now().microsecondsSinceEpoch - d.id > 800000);
         });
       }
     });
 
-    // 几秒后在附近刷新下一只
     Future.delayed(const Duration(seconds: 4), () {
       if (mounted) _spawnMob(Random().nextBool() ? 'slime' : 'mushroom');
     });
@@ -71,9 +77,14 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
     final gps = Provider.of<GpsManager>(context);
     final speed = (gps.latestPosition?.speed ?? 0.0) * 3.6;
 
+    final avatarIcon =
+        speed > 15 ? '\u{1F417}' : (speed > 2 ? '\u{1F3C3}' : '\u{1F6B6}');
+    final avatarTitle = speed > 15
+        ? '\u4E58\u9A91\u91CE\u732A'
+        : (speed > 2 ? '\u98DE\u5954\u4E2D' : '\u5192\u9669\u8005');
+
     return Stack(
       children: [
-        // 1. 屏幕正中心：冒险岛像素主角小人
         Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -88,60 +99,70 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
                 ),
                 child: Center(
                   child: Text(
-                    speed > 15 ? '🐗' : (speed > 2 ? '🏃' : '🚶'),
+                    avatarIcon,
                     style: const TextStyle(fontSize: 26),
                   ),
                 ),
               ),
               Container(
-                margin: const EdgeInsets.top: 4,
+                margin: const EdgeInsets.top(4),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Text(
-                  speed > 15 ? '乘骑野猪' : (speed > 2 ? '飞奔中' : '冒险者'),
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  avatarTitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-
-        // 2. 刷出的怪物（绿水灵 / 花蘑菇）
         ..._mobs.map((m) => Positioned(
-          left: m.pos.dx,
-          top: m.pos.dy,
-          child: GestureDetector(
-            onTap: () => _hitMob(m),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
-              child: Text(
-                m.type == 'slime' ? '🟢' : '🍄',
-                style: const TextStyle(fontSize: 32),
+              left: m.pos.dx,
+              top: m.pos.dy,
+              child: GestureDetector(
+                onTap: () => _hitMob(m),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    m.type == 'slime' ? '\u{1F7E2}' : '\u{1F344}',
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                ),
               ),
-            ),
-          ),
-        )),
-
-        // 3. 经典暴击橙黄大字
+            )),
         ..._dmgs.map((d) => Positioned(
-          left: d.pos.dx,
-          top: d.pos.dy,
-          child: Text(
-            'CRITICAL! ${d.text}',
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: Colors.orangeAccent,
-              shadows: [
-                Shadow(color: Colors.red, offset: Offset(2, 2), blurRadius: 2),
-                Shadow(color: Colors.black, offset: Offset(-1, -1), blurRadius: 2),
-              ],
-            ),
-          ),
-        )),
-
-        // 4. 左上角复古枫币统计栏
+              left: d.pos.dx,
+              top: d.pos.dy,
+              child: Text(
+                'CRITICAL! ${d.text}',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.orangeAccent,
+                  shadows: [
+                    Shadow(
+                        color: Colors.red,
+                        offset: Offset(2, 2),
+                        blurRadius: 2),
+                    Shadow(
+                        color: Colors.black,
+                        offset: Offset(-1, -1),
+                        blurRadius: 2),
+                  ],
+                ),
+              ),
+            )),
         Positioned(
           top: 60,
           left: 18,
@@ -151,16 +172,22 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
               color: const Color(0xE61E1E2E),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.amber, width: 2),
-              boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 6)],
+              boxShadow: const [
+                BoxShadow(color: Colors.black45, blurRadius: 6)
+              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('🪙', style: TextStyle(fontSize: 18)),
+                const Text('\u{1FA99}', style: TextStyle(fontSize: 18)),
                 const SizedBox(width: 6),
                 Text(
-                  '$_mesos 枫币',
-                  style: const TextStyle(color: Colors.amber, fontSize: 15, fontWeight: FontWeight.bold),
+                  '$_mesos \u67AB\u5E01',
+                  style: const TextStyle(
+                    color: Colors.amber,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
