@@ -70,6 +70,7 @@ jobs:
         working-directory: app
         run: |
           flutter pub get
+          dart format lib/body/map/
           just frb-generate
 
       - name: Build Android Release APK
