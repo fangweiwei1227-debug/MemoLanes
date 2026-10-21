@@ -314,7 +314,7 @@ class MapBodyState extends State<MapBody> with WidgetsBindingObserver {
 
         final children = <Widget>[
       _buildMapLayer(),
-      const MapleGamificationOverlay(),
+            MapleGamificationOverlay(),
       _buildOverlay(context, mode),
     ];
 
