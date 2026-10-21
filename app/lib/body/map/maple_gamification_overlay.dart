@@ -14,31 +14,26 @@ class MapleGamificationOverlay extends StatefulWidget {
 
 class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
   int _mesos = 0;
-  final List<_Mob> _mobs = [];
+  final List<_Mob> _mobs = [
+    _Mob(id: 1, type: 'slime', pos: const Offset(120, 260)),
+    _Mob(id: 2, type: 'mushroom', pos: const Offset(240, 320)),
+  ];
   final List<_Dmg> _dmgs = [];
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _spawnMob('slime');
-      _spawnMob('mushroom');
-    });
-  }
-
-  void _spawnMob(String type) {
-    if (_mobs.length >= 4) return;
+  void _spawnRandomMob() {
+    if (_mobs.length >= 4 || !mounted) return;
     final r = Random();
-    final size = MediaQuery.of(context).size;
     final angle = r.nextDouble() * 2 * pi;
     final dist = 90.0 + r.nextDouble() * 110.0;
-    final x = (size.width / 2) + cos(angle) * dist - 25;
-    final y = (size.height / 2) + sin(angle) * dist - 25;
+    final cx = MediaQuery.of(context).size.width / 2;
+    final cy = MediaQuery.of(context).size.height / 2;
+    final x = cx + cos(angle) * dist - 25;
+    final y = cy + sin(angle) * dist - 25;
 
     setState(() {
       _mobs.add(_Mob(
         id: DateTime.now().microsecondsSinceEpoch,
-        type: type,
+        type: r.nextBool() ? 'slime' : 'mushroom',
         pos: Offset(x, y),
       ));
     });
@@ -68,7 +63,7 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
     });
 
     Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) _spawnMob(Random().nextBool() ? 'slime' : 'mushroom');
+      _spawnRandomMob();
     });
   }
 
@@ -85,6 +80,7 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
 
     return Stack(
       children: [
+        // 1. 冒险岛主角小人
         Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -123,6 +119,8 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
             ],
           ),
         ),
+
+        // 2. 怪物列表
         ..._mobs.map((m) => Positioned(
               left: m.pos.dx,
               top: m.pos.dy,
@@ -141,28 +139,32 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
                 ),
               ),
             )),
+
+        // 3. 经典暴击橙黄大字
         ..._dmgs.map((d) => Positioned(
               left: d.pos.dx,
               top: d.pos.dy,
               child: Text(
                 'CRITICAL! ${d.text}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: Colors.orangeAccent,
                   shadows: [
                     Shadow(
                         color: Colors.red,
-                        offset: Offset(2, 2),
+                        offset: const Offset(2, 2),
                         blurRadius: 2),
                     Shadow(
                         color: Colors.black,
-                        offset: Offset(-1, -1),
+                        offset: const Offset(-1, -1),
                         blurRadius: 2),
                   ],
                 ),
               ),
             )),
+
+        // 4. 左上角复古枫币统计栏
         Positioned(
           top: 60,
           left: 18,
@@ -172,8 +174,8 @@ class _MapleGamificationOverlayState extends State<MapleGamificationOverlay> {
               color: const Color(0xE61E1E2E),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.amber, width: 2),
-              boxShadow: const [
-                BoxShadow(color: Colors.black45, blurRadius: 6)
+              boxShadow: [
+                BoxShadow(color: Colors.black45, blurRadius: 6),
               ],
             ),
             child: Row(
